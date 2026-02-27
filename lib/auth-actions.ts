@@ -16,6 +16,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
+    console.log("Login error:", error.message);
     redirect("/error");
   }
 
@@ -38,11 +39,15 @@ export async function signup(formData: FormData) {
       },
     },
   };
-
-  const { error } = await supabase.auth.signUp(data);
+  const { data: signUpData, error } = await supabase.auth.signUp(data);
+  console.log("signUpData", signUpData);
 
   if (error) {
     redirect("/error");
+  }
+
+  if (signUpData.user?.identities?.length === 0) {
+      redirect("/signup");
   }
 
   revalidatePath("/", "layout");
@@ -65,12 +70,15 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
       queryParams: {
         access_type: "offline",
         prompt: "consent",
       },
     },
   });
+
+  console.log("data", data)
 
   if (error) {
     console.log(error);
